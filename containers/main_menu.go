@@ -8,11 +8,18 @@
 package containers
 
 import (
+	"encoding/csv"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/storage"
-	"io"
 )
+
+type UserInfo struct {
+	UserId   string
+	UserName string
+}
+
+var UserList [][]string
 
 // SelectCSVFile 定义选择文件的函数
 func SelectCSVFile(w fyne.Window) *fyne.MainMenu {
@@ -31,14 +38,16 @@ func SelectCSVFile(w fyne.Window) *fyne.MainMenu {
 		defer reader.Close()
 
 		// 读取文件内容
-		data, err := io.ReadAll(reader)
+		csvReader := csv.NewReader(reader)
+		records, err := csvReader.ReadAll()
 		if err != nil {
 			dialog.ShowError(err, w)
 			return
 		}
 
-		// 处理文件内容，例如显示文件内容
-		dialog.ShowInformation("File Content", string(data), w)
+		for _, record := range records {
+			UserList = append(UserList, record)
+		}
 	}
 
 	// 创建一个菜单项，当点击时会打开文件选择器
