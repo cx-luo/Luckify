@@ -1,4 +1,4 @@
-module lucky-draw
+module luckify
 
 go 1.20
 

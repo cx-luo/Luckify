@@ -1,5 +1,5 @@
-// Package lucky_draw coding=utf-8
-// @Project : lucky-draw
+// Package luckify coding=utf-8
+// @Project : luckify
 // @Time    : 2025/1/7 14:55
 // @Author  : chengxiang.luo
 // @Email   : chengxiang.luo@foxmail.com
@@ -8,7 +8,7 @@
 package main
 
 import (
-	"lucky-draw/containers"
+	"luckify/containers"
 )
 
 func main() {
