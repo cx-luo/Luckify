@@ -19,14 +19,14 @@ It supports **customizable prizes**, **multiple draw modes**, and a **festive UI
 ### 🚀 Getting Started
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/luckify.git
-cd luckify
+git clone https://github.com/cx-luo/Luckify.git
+cd Luckify
 
-# Install dependencies
-npm install
+# Install Go dependencies (if needed)
+go mod tidy
 
-# Start the app
-npm run dev
+# Run the app
+go run main.go
 ````
 
 ### 📷 Screenshots
@@ -51,15 +51,15 @@ npm run dev
 ### 🚀 快速开始
 
 ```bash
-# 克隆仓库
-git clone https://github.com/yourusername/luckify.git
-cd luckify
+# Clone the repository
+git clone https://github.com/cx-luo/Luckify.git
+cd Luckify
 
-# 安装依赖
-npm install
+# Install Go dependencies (if needed)
+go mod tidy
 
-# 启动应用
-npm run dev
+# Run the app
+go run main.go
 ```
 
 ### 📷 截图预览
