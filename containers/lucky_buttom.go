@@ -9,12 +9,14 @@ package containers
 
 import (
 	"fmt"
-	"fyne.io/fyne/v2"
-	"fyne.io/fyne/v2/dialog"
-	"fyne.io/fyne/v2/widget"
+	"fyne.io/fyne/v2/theme"
 	"math/rand"
 	"strconv"
 	"time"
+
+	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/dialog"
+	"fyne.io/fyne/v2/widget"
 )
 
 func SetUserCnt() *widget.Entry {
@@ -39,61 +41,130 @@ func ShowLucky() *widget.Entry {
 	resultsText.Wrapping = fyne.TextWrapWord
 	resultsText.MultiLine = true
 	resultsText.Disable()
+	// 设置字体颜色为黑色
+	resultsText.TextStyle = fyne.TextStyle{Monospace: false, Bold: false, Italic: false}
+	resultsText.SetMinRowsVisible(12)
 	return resultsText
 }
 
 func generateUniqueRandomNumbers(max, count int) []int {
-	rand.Seed(time.Now().UnixNano())
-	numbers := make([]int, count)
-	seen := make(map[int]bool, count)
-	for len(seen) < count {
-		number := rand.Intn(max)
-		if !seen[number] {
-			seen[number] = true
-			numbers = append(numbers, number)
-		}
+	if count > max || max <= 0 || count <= 0 {
+		return nil
 	}
-	return numbers
+	indices := rand.Perm(max)
+	return indices[:count]
 }
 
-func LuckyDraw(w fyne.Window, drawCountEntry, resultsText *widget.Entry, progress *widget.ProgressBar, prizes [][]string) {
+func LuckyDraw(w fyne.Window, drawCountEntry, resultsText *widget.Entry, progress *widget.ProgressBar, prizes [][]string, onFinish func()) {
 	// 获取用户输入的抽取数量
 	drawCount, err := strconv.Atoi(drawCountEntry.Text)
 	if err != nil || drawCount <= 0 {
 		dialog.ShowError(fmt.Errorf("please enter a valid positive integer"), w)
+		if onFinish != nil {
+			onFinish()
+		}
+		return
+	}
+
+	if len(prizes) == 0 {
+		dialog.ShowError(fmt.Errorf("no prize data loaded"), w)
+		if onFinish != nil {
+			onFinish()
+		}
+		return
+	}
+
+	if drawCount > len(prizes) {
+		dialog.ShowError(fmt.Errorf("draw count exceeds available prizes"), w)
+		if onFinish != nil {
+			onFinish()
+		}
 		return
 	}
 
 	// 清空结果文本框
 	resultsText.SetText("")
 
-	// 更新进度条并抽取奖项
-	for i := 0; i < drawCount; i++ {
-		rand.Seed(time.Now().UnixNano())
+	// 生成不重复的随机索引
+	indices := generateUniqueRandomNumbers(len(prizes), drawCount)
+	if indices == nil {
+		dialog.ShowError(fmt.Errorf("failed to generate unique random numbers"), w)
+		if onFinish != nil {
+			onFinish()
+		}
+		return
+	}
+
+	for i, idx := range indices {
 		time.Sleep(100 * time.Millisecond) // 模拟抽奖过程中的延迟
-		progress.Value = float64(i+1) / float64(drawCount) * 100
-		selectedPrize := prizes[rand.Intn(len(prizes))]
-		resultsText.SetText(resultsText.Text + fmt.Sprintf("%s %s", selectedPrize[0], selectedPrize[1]) + "\n")
+		progress.SetValue(float64(i+1) / float64(drawCount) * 100)
+		selectedPrize := prizes[idx]
+		if len(selectedPrize) >= 2 {
+			resultsText.SetText(resultsText.Text + fmt.Sprintf("%s %s\n", selectedPrize[0], selectedPrize[1]))
+		} else if len(selectedPrize) == 1 {
+			resultsText.SetText(resultsText.Text + fmt.Sprintf("%s\n", selectedPrize[0]))
+		} else {
+			resultsText.SetText(resultsText.Text + "Invalid prize data\n")
+		}
+	}
+
+	// 抽奖结束后自动变为stop
+	if onFinish != nil {
+		onFinish()
 	}
 }
 
-func GenButton() *widget.Button {
+// GenButton creates a button that toggles between "Start" and "Stop" states,
+// and triggers the provided onStart and onStop callbacks.
+func GenButton(onStart func(), onStop func()) *widget.Button {
 	drawButton := widget.NewButton("Start", nil)
-	// 定义一个标志变量，用于控制随机显示的状态
 	isRunning := false
 
 	drawButton.OnTapped = func() {
 		if isRunning {
-			// 如果正在运行，则停止
 			isRunning = false
 			drawButton.SetText("Start")
+			if onStop != nil {
+				onStop()
+			}
 		} else {
-			// 如果未运行，则开始
 			isRunning = true
 			drawButton.SetText("Stop")
-			// 这里可以添加开始抽奖的逻辑
-			// 例如调用LuckyDraw等函数
+			if onStart != nil {
+				onStart()
+			}
 		}
+	}
+	return drawButton
+}
+
+// ExampleButtonUsage demonstrates how to use GenButton with custom logic.
+// 实现抽奖结束后自动变为stop
+func ExampleButtonUsage(w fyne.Window, drawCountEntry, resultsText *widget.Entry, progress *widget.ProgressBar, prizes [][]string) *widget.Button {
+	var drawButton *widget.Button
+	var stopFunc func()
+
+	// onFinish 用于抽奖结束后自动切换按钮状态
+	onFinish := func() {
+		if drawButton != nil {
+			drawButton.SetText("Start")
+		}
+		if stopFunc != nil {
+			stopFunc()
+		}
+	}
+
+	drawButton = GenButton(
+		func() { // onStart
+			go LuckyDraw(w, drawCountEntry, resultsText, progress, prizes, onFinish)
+		},
+		func() { // onStop
+			dialog.ShowInformation("Stopped", "The draw has been stopped.", w)
+		},
+	)
+	// 保存 onStop 以便 onFinish 调用
+	stopFunc = func() {
+		dialog.ShowInformation("Stopped", "The draw has been stopped.", w)
 	}
 	return drawButton
 }

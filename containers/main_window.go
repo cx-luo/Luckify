@@ -12,7 +12,6 @@ import (
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
-	"fyne.io/fyne/v2/widget"
 )
 
 func GenMainWindow() fyne.Window {
@@ -24,26 +23,37 @@ func GenMainWindow() fyne.Window {
 	backgroundImage.FillMode = canvas.ImageFillOriginal // 保持图片原始大小
 
 	drawCountEntry := SetUserCnt()
-	//resultsText := ShowLucky()
-	t := ShowLucky()
+	resultsText := ShowLucky()
 	progress := SetProcessBar()
-	drawButton := widget.NewButton("Start", nil)
-	drawButton.OnTapped = func() {
 
+	// 优化代码，增加新函数，确保功能正确
+	// 新增函数用于处理停止抽奖逻辑
+	stopChan := make(chan struct{})
+
+	startLuckyDraw := func() {
+		go LuckyDraw(w, drawCountEntry, resultsText, progress, UserList, func(){})
 	}
-	drawButton = widget.NewButton("Draw", func() {
-		LuckyDraw(w, drawCountEntry, t, progress, UserList)
-	})
+
+	stopLuckyDraw := func() {
+		// 向通道发送信号以停止抽奖
+		select {
+		case stopChan <- struct{}{}:
+		default:
+		}
+	}
+
+	// 使用 GenButton 生成带有 Start/Stop 功能的按钮
+	drawButton := GenButton(startLuckyDraw, stopLuckyDraw)
 
 	w.SetContent(container.NewStack(
 		backgroundImage,
-		container.NewVBox(drawCountEntry, drawButton, progress, t),
+		container.NewVBox(drawCountEntry, drawButton, progress, resultsText),
 	))
 
-	t.Resize(fyne.NewSize(backgroundImage.Size().Width, 200))
+	resultsText.Resize(fyne.NewSize(backgroundImage.Size().Width, 400))
 
 	menu := SelectCSVFile(w)
 	w.SetMainMenu(menu)
-	w.Resize(fyne.NewSize(backgroundImage.Size().Width, backgroundImage.Size().Height)) // 宽度为400像素，高度为300像素
+	w.Resize(fyne.NewSize(backgroundImage.Size().Width, backgroundImage.Size().Height))
 	return w
 }

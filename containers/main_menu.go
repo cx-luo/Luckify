@@ -45,8 +45,12 @@ func SelectCSVFile(w fyne.Window) *fyne.MainMenu {
 			return
 		}
 
+		// Clear UserList before appending new records to avoid duplication
+		UserList = make([][]string, 0, len(records))
 		for _, record := range records {
-			UserList = append(UserList, record)
+			if len(record) > 0 {
+				UserList = append(UserList, record)
+			}
 		}
 	}
 
