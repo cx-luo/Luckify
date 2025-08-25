@@ -20,7 +20,7 @@ func GenMainWindow() fyne.Window {
 	w := a.NewWindow("Lucky Draw")
 
 	// 加载背景图片
-	backgroundImage := canvas.NewImageFromFile("../static/bg2.png")
+	backgroundImage := canvas.NewImageFromFile("static/bg2.png")
 	backgroundImage.FillMode = canvas.ImageFillOriginal // 保持图片原始大小
 
 	drawCountEntry := SetUserCnt()
